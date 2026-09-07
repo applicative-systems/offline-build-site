@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      # the VM test boots eight guests with ~10 GB of RAM between them,
+      # more than a hosted runner has, so CI stops at evaluation
+      - name: evaluate the flake
+        run: nix flake check --no-build -L
+
+      - name: build the tools and fixtures
+        run: nix build -L .#demo-keys .#demo-project .#fod-bundler .#fod-scanner
