@@ -328,8 +328,7 @@ in
             internet,
             "fod-bundler --expr ${demoProject}/nix/release.nix"
             " --out /var/lib/fod-bundles/cache"
-            " --tarball /var/lib/fod-bundles/fod-bundle.tar.zst"
-            " --exclude '^left-pad-' 2>&1",
+            " --tarball /var/lib/fod-bundles/fod-bundle.tar.zst 2>&1",
             show="fod-bundler --expr release.nix --tarball fod-bundle.tar.zst",
             echo=(">> realizing",),
         )
@@ -564,25 +563,6 @@ in
 
 
     @stage
-    def never_green():
-        """CI-only: the excluded FOD can never be gotten, so its job never goes green"""
-        head("left-pad-src: never green")
-        # the queue runner retries the failing fetch forever; waiting for the
-        # journal is a minutes-long stare, so CI only
-        hydra.wait_until_succeeds(
-            "journalctl --unit hydra-queue-runner --output cat | grep --quiet 'failure building .*left-pad'",
-            timeout=300,
-        )
-        # /job/.../latest only knows successful builds, so look it up via the eval
-        evals = json.loads(hydra.succeed(api("/jobset/demo/main/evals")))
-        blds = [json.loads(hydra.succeed(api(f"/build/{i}")))
-                for i in evals["evals"][0]["builds"]]
-        (forbidden,) = [b for b in blds if b["job"] == "left-pad-src"]
-        assert not (forbidden["finished"] == 1 and forbidden["buildstatus"] == 0), forbidden
-        fact("left-pad-src", "NEVER GREEN (no network)")
-
-
-    @stage
     def punchline():
         """the closure audit: release what passes, refuse what does not"""
         audit("infusion-pump-fw")
@@ -731,8 +711,6 @@ in
             if fn is cross:
                 tampered()
                 sabotage()
-            if fn is prove:
-                never_green()
             if fn is release:
                 client_refuses()
         print("\noffline build site demo: all checks hold")

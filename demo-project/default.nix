@@ -19,6 +19,5 @@ runCommand "demo-project"
       --subst-var-by SYSTEM ${stdenv.hostPlatform.system} \
       --subst-var-by SERIAL_HASH "$(sri $out/webroot/src/libserialcomm-2.4.rs)" \
       --subst-var-by CONTROLLER_HASH "$(sri $out/webroot/src/pump-controller-1.8.rs)" \
-      --subst-var-by EXPORTER_HASH "$(sri $out/webroot/src/audit-log-exporter-1.0.rs)" \
-      --subst-var-by LEFTPAD_HASH "$(sri $out/webroot/src/left-pad-1.0.rs)"
+      --subst-var-by EXPORTER_HASH "$(sri $out/webroot/src/audit-log-exporter-1.0.rs)"
   ''

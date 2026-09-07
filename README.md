@@ -91,7 +91,6 @@ everywhere; the nix sandbox stays enabled on every machine.
   (same restrictions as Hydra's evaluator), walks the derivation closures,
   filters the fixed-output derivations, realizes them (the only step that
   touches the network) and exports them as a `file://` binary cache bundle.
-  `--exclude` keeps unapproved jobs out of the bundle.
 - **`fod-scanner`** — imports a bundle (CA paths only), scans every path
   (a stand-in for your real scanner), and on success signs
   each path with the scanner's nix key and the bundle with the scanner's SSH

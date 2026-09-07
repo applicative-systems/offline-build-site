@@ -97,12 +97,4 @@ in
       audit-log-exporter
     ]}
   '';
-
-  # served by the mirror but excluded from the bundle: only the network the
-  # build site does not have could fetch it
-  left-pad-src = fetch {
-    name = "left-pad-1.0.rs";
-    url = "http://internet/src/left-pad-1.0.rs";
-    hash = "@LEFTPAD_HASH@";
-  };
 }

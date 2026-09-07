@@ -6,12 +6,11 @@ usage: fod-bundler --expr FILE [options]
   --out DIR        output binary cache directory (default: ./fod-cache)
   --tarball FILE   additionally pack the cache into a .tar.zst bundle
   --workers N      nix-eval-jobs workers (default: 2)
-  --exclude REGEX  skip jobs whose attribute name matches REGEX
   --allow-ifd      allow import-from-derivation during evaluation
 EOF
 }
 
-expr="" out="./fod-cache" tarball="" workers=2 exclude='^$' allow_ifd=false
+expr="" out="./fod-cache" tarball="" workers=2 allow_ifd=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -19,7 +18,6 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --tarball) tarball="$2"; shift 2 ;;
     --workers) workers="$2"; shift 2 ;;
-    --exclude) exclude="$2"; shift 2 ;;
     --allow-ifd) allow_ifd=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "fod-bundler: unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -49,11 +47,7 @@ if jq --exit-status --slurp 'any(.error != null)' "$tmp/jobs.jsonl" > /dev/null;
   exit 1
 fi
 
-jq --raw-output --arg ex "$exclude" \
-  'select(.drvPath != null) | select(.attr | test($ex) | not) | .drvPath' \
-  "$tmp/jobs.jsonl" | sort --unique > "$tmp/drvs"
-excluded=$(jq --raw-output --arg ex "$exclude" 'select(.attr | test($ex)) | .attr' "$tmp/jobs.jsonl" | tr '\n' ' ')
-[ -z "$excluded" ] || echo ">> excluded jobs: $excluded" >&2
+jq --raw-output 'select(.drvPath != null) | .drvPath' "$tmp/jobs.jsonl" | sort --unique > "$tmp/drvs"
 
 # fixed-output iff an output pins a hash; (.derivations // .) covers
 # nix >= 2.35 and the older flat format
