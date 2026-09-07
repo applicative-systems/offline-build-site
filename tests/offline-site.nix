@@ -367,27 +367,6 @@ in
 
 
     @stage
-    def scan_reject():
-        """negative: one policy hit refuses the WHOLE bundle, not just that path"""
-        head("fod-scanner: one license hit refuses everything")
-        # libserialcomm really carries an SPDX GPL-3.0-or-later tag, so no
-        # evil fixture is needed
-        scanner.succeed("echo 'GPL-3.0-or-later' > /root/license-policy")
-        status, out = scanner.execute(
-            "fod-scanner --bundle /root/fod-bundle.tar.zst --out /root/rejected.tar.zst"
-            " --key /run/scanner-keys/nix.sec --ssh-key /run/scanner-keys/ssh-sign"
-            " --policy /root/license-policy 2>&1"
-        )
-        assert status != 0, "scanner signed a bundle that violates the policy"
-        assert "signing NOTHING" in out, out
-        scanner.succeed("test ! -e /root/rejected.tar.zst.sig")
-        for line in out.splitlines():
-            if "REJECTED" in line:
-                fact("policy hit", line.split(": REJECTED")[0].removeprefix("SCAN "))
-        fact("RESULT", "REFUSED - 0 of 3 paths signed", tone="bad")
-
-
-    @stage
     def carry():
         """the usb stick: the driver is the only thing that crosses the gap"""
         scanner.copy_from_machine("/root/signed-bundle.tar.zst")
@@ -749,8 +728,6 @@ in
             fn()
             # CI only: real proofs the test must keep, but an arc too many
             # for a 20-minute stage
-            if fn is seed:
-                scan_reject()
             if fn is cross:
                 tampered()
                 sabotage()

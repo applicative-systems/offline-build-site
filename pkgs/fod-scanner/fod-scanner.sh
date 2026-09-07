@@ -1,16 +1,15 @@
 usage() {
   cat <<EOF
-usage: fod-scanner --bundle FILE --key FILE --ssh-key FILE --out FILE [options]
+usage: fod-scanner --bundle FILE --key FILE --ssh-key FILE --out FILE
 
   --bundle FILE   input bundle (.tar.zst of a file:// binary cache), from fod-bundler
   --key FILE      nix store secret key; every approved path gets its signature
   --ssh-key FILE  SSH private key for the detached bundle signature (namespace: fod-bundle)
   --out FILE      output bundle; a detached signature is written to FILE.sig
-  --policy FILE   reject patterns, one per line (default: an EICAR-shaped marker)
 EOF
 }
 
-bundle="" key="" sshkey="" outfile="" policy=""
+bundle="" key="" sshkey="" outfile=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -18,7 +17,6 @@ while [ $# -gt 0 ]; do
     --key) key="$2"; shift 2 ;;
     --ssh-key) sshkey="$2"; shift 2 ;;
     --out) outfile="$2"; shift 2 ;;
-    --policy) policy="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "fod-scanner: unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -31,14 +29,12 @@ export NIX_CONFIG="extra-experimental-features = nix-command"
 tmp=$(mktemp --directory)
 trap 'rm --recursive --force "$tmp"' EXIT
 
-if [ -z "$policy" ]; then
-  policy="$tmp/default-policy"
-  # not the real EICAR string: the genuine one gets quarantined on whatever
-  # laptop runs this
-  cat > "$policy" <<'EOF'
+policy="$tmp/policy"
+# not the real EICAR string: the genuine one gets quarantined on whatever
+# laptop runs this
+cat > "$policy" <<'EOF'
 X5O!P%@AP[4\PZX54(P^)7CC)7}$DEMO-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
 EOF
-fi
 
 mkdir "$tmp/in"
 tar --directory "$tmp/in" --zstd --extract --file "$bundle"

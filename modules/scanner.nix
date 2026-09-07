@@ -21,12 +21,6 @@ in
       type = lib.types.str;
       description = "SSH private key for the detached bundle signature.";
     };
-
-    policyFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = null;
-      description = "Scan policy (reject patterns); null uses the tool's default.";
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -56,8 +50,7 @@ in
         exec ${lib.getExe' fodScanner "fod-scanner"} \
           --bundle "$1" --out "$2" \
           --key /run/scanner-keys/nix.sec \
-          --ssh-key /run/scanner-keys/ssh-sign \
-          ${lib.optionalString (cfg.policyFile != null) "--policy ${cfg.policyFile}"}
+          --ssh-key /run/scanner-keys/ssh-sign
       '')
       fodScanner
     ];

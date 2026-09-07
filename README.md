@@ -93,7 +93,7 @@ everywhere; the nix sandbox stays enabled on every machine.
   touches the network) and exports them as a `file://` binary cache bundle.
   `--exclude` keeps unapproved jobs out of the bundle.
 - **`fod-scanner`** — imports a bundle (CA paths only), scans every path
-  against a policy (a stand-in for your real scanner), and on success signs
+  (a stand-in for your real scanner), and on success signs
   each path with the scanner's nix key and the bundle with the scanner's SSH
   key. One violation → nothing gets signed.
 - **`fod-cache-import`** (on the fodcache) — the import check, see above.
@@ -123,6 +123,6 @@ for the nix keys, `ssh-keygen -t ed25519` for the SSH keys), provision them
 with agenix/sops-nix, and point the module options at the decrypted paths. The
 module options take file paths for exactly this reason.
 
-For production you would additionally want: a real scanner behind
-`fod-scanner --policy`, and monitoring on both gates (a refused 
+For production you would additionally want: a real scanner in place of
+`fod-scanner`'s marker grep, and monitoring on both gates (a refused 
 bundle or a failed closure audit should alert).
