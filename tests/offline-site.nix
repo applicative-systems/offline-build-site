@@ -297,19 +297,6 @@ in
         ))
 
 
-    ALL = [internet, scanner, fodcache, hydra, builder1, signer, cache, client]
-
-
-    @stage
-    def preheat():
-        """wait for the machines that started booting with the driver"""
-        head("preheat: waiting for all eight machines")
-        for m in ALL:
-            m.wait_for_unit("multi-user.target")
-        hydra.wait_for_unit("hydra-init.service")
-        print("site up, hydra initialised - nothing is on the fod cache yet")
-
-
     @stage
     def boot_online():
         """the online world comes up"""
