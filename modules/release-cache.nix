@@ -16,11 +16,6 @@ in
       default = "/var/lib/release-cache";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 80;
-    };
-
     uploaderKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       description = "SSH public keys allowed to upload (the signer).";
@@ -37,12 +32,6 @@ in
       enable = true;
       virtualHosts.release-cache = {
         default = true;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = cfg.port;
-          }
-        ];
         root = cfg.webRoot;
       };
     };
@@ -83,9 +72,6 @@ in
       '';
     };
 
-    networking.firewall.allowedTCPPorts = [
-      cfg.port
-    ]
-    ++ config.services.openssh.ports;
+    networking.firewall.allowedTCPPorts = [ 80 ] ++ config.services.openssh.ports;
   };
 }

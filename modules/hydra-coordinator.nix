@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -9,16 +10,6 @@ in
 {
   options.offline-build-site.hydra = {
     enable = lib.mkEnableOption "the offline-site Hydra coordinator";
-
-    hydraURL = lib.mkOption {
-      type = lib.types.str;
-      default = "http://hydra:3000";
-    };
-
-    notificationSender = lib.mkOption {
-      type = lib.types.str;
-      default = "hydra@localhost";
-    };
 
     fodCacheUrl = lib.mkOption {
       type = lib.types.str;
@@ -36,18 +27,6 @@ in
         lib.types.submodule {
           options = {
             hostName = lib.mkOption { type = lib.types.str; };
-            systems = lib.mkOption {
-              type = lib.types.listOf lib.types.str;
-              default = [ "x86_64-linux" ];
-            };
-            maxJobs = lib.mkOption {
-              type = lib.types.int;
-              default = 2;
-            };
-            sshUser = lib.mkOption {
-              type = lib.types.str;
-              default = "hydra-builder";
-            };
             publicHostKeyFile = lib.mkOption {
               type = lib.types.path;
               description = "Pinned SSH host public key of the builder.";
@@ -77,8 +56,8 @@ in
   config = lib.mkIf cfg.enable {
     services.hydra = {
       enable = true;
-      hydraURL = cfg.hydraURL;
-      notificationSender = cfg.notificationSender;
+      hydraURL = "http://hydra:3000";
+      notificationSender = "hydra@localhost";
       # the queue runner substitutes FODs from the cache instead of building them
       useSubstitutes = true;
     };
@@ -92,12 +71,11 @@ in
     # only renders /etc/nix/machines for the queue runner; the daemon never builds remotely
     nix.distributedBuilds = false;
     nix.buildMachines = map (b: {
-      inherit (b)
-        hostName
-        systems
-        maxJobs
-        sshUser
-        ;
+      inherit (b) hostName;
+      system = pkgs.stdenv.hostPlatform.system;
+      maxJobs = 2;
+      # the user builder.nix creates
+      sshUser = "hydra-builder";
       sshKey = "/run/keys-hydra/queue-runner";
     }) cfg.builders;
 

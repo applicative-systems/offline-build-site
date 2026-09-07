@@ -16,15 +16,16 @@ let
       pkgs.openssh
     ];
     text = ''
-      export HYDRA_TARGET="ssh://${cfg.hydra.user}@${cfg.hydra.host}"
+      # nix-ro and uploader: the users hydra-coordinator.nix and release-cache.nix create
+      export HYDRA_TARGET="ssh://nix-ro@${cfg.hydra.host}"
       export SSH_KEY_HYDRA=/run/keys-signer/ssh-hydra
       export SSH_KEY_PUSH=/run/keys-signer/ssh-push
       export KNOWN_HOSTS=${cfg.knownHostsFile}
       export BUILDER_KEYS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.trustedBuilderKeys)}
       export SCANNER_KEYS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.scannerPublicKeys)}
       export RELEASE_KEY_FILE=/run/keys-signer/release.sec
-      export STAGING_DIR=${cfg.stagingDir}
-      export PUSH_TARGET="${cfg.push.user}@${cfg.push.host}"
+      export STAGING_DIR=/var/lib/signer/staging
+      export PUSH_TARGET="uploader@${cfg.push.host}"
       ${builtins.readFile ./signer-release.sh}
     '';
   };
@@ -35,10 +36,6 @@ in
 
     hydra = {
       host = lib.mkOption { type = lib.types.str; };
-      user = lib.mkOption {
-        type = lib.types.str;
-        default = "nix-ro";
-      };
       keyFile = lib.mkOption {
         type = lib.types.str;
         description = "SSH private key for the read-only store access on hydra.";
@@ -60,17 +57,8 @@ in
       description = "The release signing key. Lives ONLY on this machine.";
     };
 
-    stagingDir = lib.mkOption {
-      type = lib.types.str;
-      default = "/var/lib/signer/staging";
-    };
-
     push = {
       host = lib.mkOption { type = lib.types.str; };
-      user = lib.mkOption {
-        type = lib.types.str;
-        default = "uploader";
-      };
       keyFile = lib.mkOption {
         type = lib.types.str;
         description = "SSH private key for the rrsync-jailed upload to the release cache.";
@@ -119,7 +107,7 @@ in
         group = "root";
         argument = cfg.releaseSecretKeyFile;
       };
-      ${cfg.stagingDir}.d = {
+      "/var/lib/signer/staging".d = {
         mode = "0755";
         user = "root";
         group = "root";

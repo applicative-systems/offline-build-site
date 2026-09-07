@@ -20,12 +20,6 @@ in
       description = "SSH public key of Hydra's queue runner.";
     };
 
-    builderUser = lib.mkOption {
-      type = lib.types.str;
-      default = "hydra-builder";
-      description = "User the queue runner logs in as.";
-    };
-
     hostKeyFile = lib.mkOption {
       type = lib.types.str;
       description = "Pinned SSH host key (private part).";
@@ -37,15 +31,15 @@ in
       # also covers builds arriving over the serve protocol
       secret-key-files = cfg.signingKeyFile;
       # serve --write imports build inputs through the daemon
-      trusted-users = [ cfg.builderUser ];
+      trusted-users = [ "hydra-builder" ];
       # hydra pushes every input, nothing to substitute
       substituters = lib.mkForce [ ];
     };
 
-    users.groups.${cfg.builderUser} = { };
-    users.users.${cfg.builderUser} = {
+    users.groups.hydra-builder = { };
+    users.users.hydra-builder = {
       isNormalUser = true;
-      group = cfg.builderUser;
+      group = "hydra-builder";
       openssh.authorizedKeys.keys = [
         ''restrict,command="${config.nix.package}/bin/nix-store --serve --write" ${cfg.queueRunnerPublicKey}''
       ];
@@ -64,7 +58,7 @@ in
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
-        AllowUsers = [ cfg.builderUser ];
+        AllowUsers = [ "hydra-builder" ];
       };
       extraConfig = ''
         HostKey /run/ssh-host-key

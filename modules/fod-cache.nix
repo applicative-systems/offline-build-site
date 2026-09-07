@@ -24,9 +24,10 @@ let
       fi
       bundle="$1" sig="$2"
 
+      # -I must name the principal listed in allowedSignersFile
       ssh-keygen -Y verify \
         -f ${cfg.allowedSignersFile} \
-        -I ${cfg.signerIdentity} \
+        -I scanner@demo \
         -n fod-bundle \
         -s "$sig" < "$bundle" \
         || { echo "fod-cache-import: REFUSED: bad or missing bundle signature" >&2; exit 1; }
@@ -60,20 +61,9 @@ in
       description = "Cache directory served by nginx.";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 80;
-    };
-
     allowedSignersFile = lib.mkOption {
       type = lib.types.str;
       description = "ssh-keygen -Y allowed_signers file pinning the scanner key.";
-    };
-
-    signerIdentity = lib.mkOption {
-      type = lib.types.str;
-      default = "scanner@demo";
-      description = "Signer identity expected in the bundle signature.";
     };
   };
 
@@ -82,17 +72,11 @@ in
       enable = true;
       virtualHosts.fod-cache = {
         default = true;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = cfg.port;
-          }
-        ];
         root = cfg.webRoot;
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ cfg.port ];
+    networking.firewall.allowedTCPPorts = [ 80 ];
 
     environment.systemPackages = [ importer ];
   };

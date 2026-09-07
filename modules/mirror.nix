@@ -16,18 +16,6 @@ in
       type = lib.types.path;
       description = "Directory served at http://<host>/ (the demo source files).";
     };
-
-    bundleDir = lib.mkOption {
-      type = lib.types.path;
-      default = "/var/lib/fod-bundles";
-      description = "Where fod-bundler output lands; served at /bundles/.";
-    };
-
-    fodBundlerPackage = lib.mkOption {
-      type = lib.types.package;
-      default = pkgs.callPackage ../pkgs/fod-bundler { };
-      description = "The fod-bundler package to install.";
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -36,11 +24,11 @@ in
       virtualHosts.mirror = {
         default = true;
         root = cfg.webRoot;
-        locations."/bundles/".alias = "${cfg.bundleDir}/";
+        locations."/bundles/".alias = "/var/lib/fod-bundles/";
       };
     };
 
-    systemd.tmpfiles.settings.mirror.${cfg.bundleDir}.d = {
+    systemd.tmpfiles.settings.mirror."/var/lib/fod-bundles".d = {
       mode = "0755";
       user = "root";
       group = "root";
@@ -48,6 +36,6 @@ in
 
     networking.firewall.allowedTCPPorts = [ 80 ];
 
-    environment.systemPackages = [ cfg.fodBundlerPackage ];
+    environment.systemPackages = [ (pkgs.callPackage ../pkgs/fod-bundler { }) ];
   };
 }

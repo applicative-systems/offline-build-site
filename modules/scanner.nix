@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.offline-build-site.scanner;
+  fodScanner = pkgs.callPackage ../pkgs/fod-scanner { };
 in
 {
   options.offline-build-site.scanner = {
@@ -25,12 +26,6 @@ in
       type = lib.types.nullOr lib.types.path;
       default = null;
       description = "Scan policy (reject patterns); null uses the tool's default.";
-    };
-
-    fodScannerPackage = lib.mkOption {
-      type = lib.types.package;
-      default = pkgs.callPackage ../pkgs/fod-scanner { };
-      description = "The fod-scanner package to install.";
     };
   };
 
@@ -58,13 +53,13 @@ in
 
     environment.systemPackages = [
       (pkgs.writeShellScriptBin "scan-fod-bundle" ''
-        exec ${lib.getExe' cfg.fodScannerPackage "fod-scanner"} \
+        exec ${lib.getExe' fodScanner "fod-scanner"} \
           --bundle "$1" --out "$2" \
           --key /run/scanner-keys/nix.sec \
           --ssh-key /run/scanner-keys/ssh-sign \
           ${lib.optionalString (cfg.policyFile != null) "--policy ${cfg.policyFile}"}
       '')
-      cfg.fodScannerPackage
+      fodScanner
     ];
   };
 }
