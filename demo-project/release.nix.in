@@ -1,0 +1,108 @@
+# no nixpkgs on purpose: rebuilding it inside a VM test would take hours
+let
+  # the builtin fetcher needs no curl and imports under hydra's restrict-eval
+  fetch =
+    { name, url, hash }:
+    import <nix/fetchurl.nix> { inherit name url hash; };
+
+  serialSrc = fetch {
+    name = "libserialcomm-2.4.rs";
+    url = "http://internet/src/libserialcomm-2.4.rs";
+    hash = "@SERIAL_HASH@";
+  };
+
+  controllerSrc = fetch {
+    name = "pump-controller-1.8.rs";
+    url = "http://internet/src/pump-controller-1.8.rs";
+    hash = "@CONTROLLER_HASH@";
+  };
+
+  # the demo strips this one's scanner signature
+  exporterSrc = fetch {
+    name = "audit-log-exporter-1.0.rs";
+    url = "http://internet/src/audit-log-exporter-1.0.rs";
+    hash = "@EXPORTER_HASH@";
+  };
+
+  mkStep =
+    name: script:
+    builtins.derivation {
+      inherit name;
+      system = "@SYSTEM@";
+      # busybox ash: shell builtins only, no coreutils in the sandbox
+      builder = "/bin/sh";
+      args = [
+        "-c"
+        script
+      ];
+    };
+
+  # runnable /bin/sh programs, so the client can invoke the firmware. the
+  # embedded sources put every input in the runtime closure the signer audits
+  embed = inputs: ''
+    for f in ${toString inputs}; do
+      echo "# source: $f"
+      while IFS= read -r line; do echo "# $line"; done < "$f"
+    done >> $out
+  '';
+
+  pump-controller = mkStep "pump-controller-1.8" ''
+    echo 'echo "  pump-controller 1.8      rate control, occlusion alarms"' >> $out
+    ${embed [ serialSrc controllerSrc ]}
+  '';
+
+  # the optional module links against the controller, like a real component would
+  audit-log-exporter = mkStep "audit-log-exporter-1.0" ''
+    echo 'echo "  audit-log-exporter 1.0   event log export"' >> $out
+    ${embed [
+      exporterSrc
+      pump-controller
+    ]}
+  '';
+
+  bootLog = components: ''
+    echo 'echo "infusion-pump-fw 1.8   starting"' >> $out
+    for f in ${toString components}; do
+      while IFS= read -r line; do
+        case "$line" in "echo "*) echo "$line" ;; esac
+      done < "$f"
+    done >> $out
+    echo 'echo "  serial bus ............... ok"' >> $out
+    echo 'echo "  occlusion alarm .......... ok"' >> $out
+    echo 'echo "ready. infusing 25 ml/h"' >> $out
+  '';
+
+  infusion-pump-fw = mkStep "infusion-pump-fw-1.8" ''
+    ${bootLog [ pump-controller ]}
+    ${embed [ pump-controller ]}
+  '';
+in
+{
+  # FODs as jobs: with the cache in place they substitute and show 0 build steps
+  libserialcomm-src = serialSrc;
+  pump-controller-src = controllerSrc;
+  audit-log-exporter-src = exporterSrc;
+
+  inherit pump-controller audit-log-exporter infusion-pump-fw;
+
+  # reaches the stripped FOD through audit-log-exporter: hydra builds it
+  # happily (CA short-circuit), the release signer must refuse it
+  infusion-pump-fw-plus = mkStep "infusion-pump-fw-plus-1.8" ''
+    ${bootLog [
+      pump-controller
+      audit-log-exporter
+    ]}
+    ${embed [
+      pump-controller
+      audit-log-exporter
+    ]}
+  '';
+
+  # served by the mirror but excluded from the bundle: only the network the
+  # build site does not have could fetch it
+  left-pad-src = fetch {
+    name = "left-pad-1.0.rs";
+    url = "http://internet/src/left-pad-1.0.rs";
+    hash = "@LEFTPAD_HASH@";
+  };
+}

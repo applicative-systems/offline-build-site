@@ -1,0 +1,6 @@
+/result
+/result-*
+# nix run .#demo drops these into the working directory
+/.nixos-test-history
+/signed-bundle.tar.zst
+/signed-bundle.tar.zst.sig
