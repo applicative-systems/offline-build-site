@@ -14,7 +14,6 @@
       {
         demo = inputs.self.checks.${system}.offline-site.driverInteractive;
         inherit (demoPkgs)
-          demo-keys
           demo-project
           fod-bundler
           fod-scanner

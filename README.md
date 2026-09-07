@@ -118,10 +118,10 @@ Every role is a reusable NixOS module under `nixosModules.*`:
 
 **⚠️ Demo keys.** `demo-keys/` contains throwaway keys committed
 to this repo so the demo is reproducible — treat them like the snake-oil keys
-in nixpkgs. For anything real: generate fresh keys (`nix build .#demo-keys`
-gives you a full set), provision them with agenix/sops-nix, and point the
-module options at the decrypted paths. The module options take file paths for
-exactly this reason.
+in nixpkgs. For anything real: generate fresh keys (`nix key generate-secret`
+for the nix keys, `ssh-keygen -t ed25519` for the SSH keys), provision them
+with agenix/sops-nix, and point the module options at the decrypted paths. The
+module options take file paths for exactly this reason.
 
 For production you would additionally want: a real scanner behind
 `fod-scanner --policy`, and monitoring on both gates (a refused 

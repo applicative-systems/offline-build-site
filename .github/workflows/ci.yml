@@ -17,4 +17,4 @@ jobs:
         run: nix flake check --no-build -L
 
       - name: build the tools and fixtures
-        run: nix build -L .#demo-keys .#demo-project .#fod-bundler .#fod-scanner
+        run: nix build -L .#demo-project .#fod-bundler .#fod-scanner
