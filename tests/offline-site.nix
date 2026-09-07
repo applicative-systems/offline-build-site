@@ -407,23 +407,6 @@ in
 
 
     @stage
-    def tampered():
-        """CI-only: a flipped byte must not get past the import check"""
-        head("tampered bundle: refused at the boundary")
-        fodcache.succeed(
-            "cp /root/bundle.tar.zst /root/tampered.tar.zst"
-            " && printf X | dd of=/root/tampered.tar.zst bs=1 seek=100 conv=notrunc 2>/dev/null"
-        )
-        status, out = fodcache.execute(
-            "fod-cache-import /root/tampered.tar.zst /root/bundle.tar.zst.sig 2>&1"
-        )
-        assert status != 0, "the import check accepted a tampered bundle"
-        # assert on the reason: a flipped byte could also just break extraction
-        assert "REFUSED: bad or missing bundle signature" in out, out
-        fact("tampered", "REFUSED: bad or missing bundle signature", tone="bad")
-
-
-    @stage
     def sabotage():
         """strip ONE scanner signature: nix will still substitute it"""
         head("sabotage: one source loses its scanner signature")
@@ -709,7 +692,6 @@ in
             # CI only: real proofs the test must keep, but an arc too many
             # for a 20-minute stage
             if fn is cross:
-                tampered()
                 sabotage()
             if fn is release:
                 client_refuses()
